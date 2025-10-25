@@ -1,0 +1,134 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+# ---- Load libraries ----
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# ---- File paths ----
+file_path <- "/Volumes/MerzLab/People/Melissa/Network_test/network_metrics_summary.csv"
+output_path <- "/Volumes/MerzLab/People/Melissa/Network_test/network_metrics_wide.csv"
+
+# ---- Read in data ----
+df <- read.csv(file_path)
+
+# ---- Clean subject IDs ----
+df <- df %>%
+  dplyr::rename(SID = subject) %>%
+  dplyr::mutate(SID = stringr::str_replace(SID, "sub-", "MR"))
+
+# ---- Extract *unique* global metrics ----
+global_df <- df %>%
+  dplyr::filter(!is.na(modularity)) %>%        # keep only rows with global metrics
+  dplyr::select(SID, modularity, integration_global, segregation_global, density) %>%
+  dplyr::distinct(SID, .keep_all = TRUE)       # ensure one row per SID
+
+# ---- Extract and pivot network metrics ----
+network_df <- df %>%
+  dplyr::filter(!is.na(network)) %>%
+  dplyr::select(SID, network, integration_network, segregation_network, density)
+
+network_wide <- network_df %>%
+  tidyr::pivot_wider(
+    id_cols = SID,
+    names_from = network,
+    values_from = c(integration_network, segregation_network),
+    names_glue = "{network}_{.value}"
+  )
+
+# ---- Merge and ensure one row per SID ----
+final_df <- global_df %>%
+  dplyr::left_join(network_wide, by = "SID") %>%
+  dplyr::distinct(SID, .keep_all = TRUE)
+
+# ---- Save output ----
+write.csv(final_df, output_path, row.names = FALSE)
+
+cat("✅ One-row-per-SID file saved to:", output_path, "\n")
+
+
+```
+```{r}
+# ---- Load libraries ----
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# ---- File paths ----
+file_path <- "/Volumes/MerzLab/People/Melissa/Network_test/network_metrics_summary_thresholded.csv"
+output_path <- "/Volumes/MerzLab/People/Melissa/Network_test/network_metrics_wide_thresholded.csv"
+
+# ---- Read in data ----
+df <- read.csv(file_path)
+
+# ---- Clean subject IDs ----
+df <- df %>%
+  dplyr::rename(SID = subject) %>%
+  dplyr::mutate(SID = stringr::str_replace(SID, "sub-", "MR"))
+
+# ---- Extract *unique* global metrics ----
+global_df <- df %>%
+  dplyr::filter(!is.na(modularity)) %>%
+  dplyr::select(SID, modularity, integration_global, segregation_global, density_global) %>%
+  dplyr::distinct(SID, .keep_all = TRUE)
+
+# ---- Extract and clean network metrics ----
+network_df <- df %>%
+  dplyr::filter(!is.na(network)) %>%
+  dplyr::select(SID, network, integration_network, segregation_network, density_network) %>%
+  dplyr::mutate(network = as.character(network)) %>%          # ensure network is character
+  dplyr::filter(!is.na(integration_network) |                 # drop rows that are all NAs
+                  !is.na(segregation_network) |
+                  !is.na(density_network))
+
+# ---- Pivot to wide ----
+network_wide <- network_df %>%
+  tidyr::pivot_wider(
+    id_cols = SID,
+    names_from = network,
+    values_from = c(integration_network, segregation_network, density_network),
+    names_glue = "{network}_{.value}",
+    values_fill = NA                              # ensures empty cells still exist
+  )
+
+# ---- Merge and ensure one row per SID ----
+final_df <- global_df %>%
+  dplyr::left_join(network_wide, by = "SID") %>%
+  dplyr::distinct(SID, .keep_all = TRUE)
+
+# ---- Save output ----
+write.csv(final_df, output_path, row.names = FALSE)
+
+cat("✅ One-row-per-SID file with network density saved to:", output_path, "\n")
+
+
+
+```
+
+
+```{r}
+network1 <- read.csv("/Volumes/MerzLab/People/Melissa/dissertation/triplenet.csv")
+network2 <- read.csv("/Volumes/MerzLab/People/Melissa/Network_test/network_metrics_wide_thresholded.csv")
+
+df <- merge(network1, network2, by = "SID") 
+
+
+cor.test(df$, df$DMN_ClusteringCoefficient)
+
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
