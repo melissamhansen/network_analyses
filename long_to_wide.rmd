@@ -35,8 +35,3 @@ final_df <- global_df %>%
   dplyr::left_join(network_wide, by = "SID") %>%
   dplyr::distinct(SID, .keep_all = TRUE)
 write.csv(final_df, output_path, row.names = FALSE)
-
-
-
-```
-
