@@ -1,32 +1,23 @@
----
-title: "R Notebook"
-output: html_notebook
 
-```{r}
-# ---- Load libraries ----
 library(dplyr)
 library(tidyr)
 library(stringr)
 
-# ---- File paths ----
 file_path <- ""
 output_path <- ""
 
-# ---- Read in data ----
 df <- read.csv(file_path)
-
-# ---- Clean subject IDs ----
 df <- df %>%
   dplyr::rename(SID = subject) %>%
   dplyr::mutate(SID = stringr::str_replace(SID, "sub-", "MR"))
 
-# ---- Extract *unique* global metrics ----
+# extract global metrics 
 global_df <- df %>%
-  dplyr::filter(!is.na(modularity)) %>%        # kglobal metrics
+  dplyr::filter(!is.na(modularity)) %>%        
   dplyr::select(SID, modularity, integration_global, segregation_global, density) %>%
   dplyr::distinct(SID, .keep_all = TRUE)       
 
-# ---- Extract and pivot network metrics ----
+# extract metrics by network
 network_df <- df %>%
   dplyr::filter(!is.na(network)) %>%
   dplyr::select(SID, network, integration_network, segregation_network, density)
@@ -39,73 +30,13 @@ network_wide <- network_df %>%
     names_glue = "{network}_{.value}"
   )
 
-# ---- Merge and ensure one row per SID ----
+
 final_df <- global_df %>%
   dplyr::left_join(network_wide, by = "SID") %>%
   dplyr::distinct(SID, .keep_all = TRUE)
-
-# ---- Save output ----
 write.csv(final_df, output_path, row.names = FALSE)
 
 
-```
-```{r}
-
-# ---- File paths ----
-file_path <- ""
-output_path <- "/"
-
-# ---- Read in data ----
-df <- read.csv(file_path)
-
-# ---- Clean subject IDs ----
-df <- df %>%
-  dplyr::rename(SID = subject) %>%
-  dplyr::mutate(SID = stringr::str_replace(SID, "sub-", "MR"))
-
-# ---- Extract *unique* global metrics ----
-global_df <- df %>%
-  dplyr::filter(!is.na(modularity)) %>%
-  dplyr::select(SID, modularity, integration_global, segregation_global, density_global) %>%
-  dplyr::distinct(SID, .keep_all = TRUE)
-
-# ---- Extract and clean network metrics ----
-network_df <- df %>%
-  dplyr::filter(!is.na(network)) %>%
-  dplyr::select(SID, network, integration_network, segregation_network, density_network) %>%
-  dplyr::mutate(network = as.character(network)) %>%        
-  dplyr::filter(!is.na(integration_network) |               
-                  !is.na(segregation_network) |
-                  !is.na(density_network))
-
-# ---- Pivot to wide ----
-network_wide <- network_df %>%
-  tidyr::pivot_wider(
-    id_cols = SID,
-    names_from = network,
-    values_from = c(integration_network, segregation_network, density_network),
-    names_glue = "{network}_{.value}",
-    values_fill = NA                              
-  )
-
-# ---- Merge and ensure one row per SID ----
-final_df <- global_df %>%
-  dplyr::left_join(network_wide, by = "SID") %>%
-  dplyr::distinct(SID, .keep_all = TRUE)
-
-# ---- Save output ----
-write.csv(final_df, output_path, row.names = FALSE)
-
-
-```
-```{r}
-network1 <- read.csv("/v")
-network2 <- read.csv("v")
-
-df <- merge(network1, network2, by = "SID") 
-
-
-cor.test(df$, df$DMN_ClusteringCoefficient)
 
 ```
 
