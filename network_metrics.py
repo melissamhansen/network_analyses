@@ -6,11 +6,11 @@ import networkx as nx
 import community  # python-louvain
 import bct  # brain connectivity toolbox (pip install bctpy)
 
-# ==== PATHS ====
-base_dir = "/media/projects/earlyexp/data/mri/postproc/smooths/adjacency_matrices"
+# paths
+base_dir = ".../data/mri/postproc/smooths/adjacency_matrices"
 output_csv = os.path.join(base_dir, "network_metrics_summary.csv")
 
-# ==== HELPERS ====
+# compute metrics
 
 def compute_graph_metrics(adj_df):
     """Compute modularity, integration (global efficiency),
@@ -41,12 +41,12 @@ def compute_graph_metrics(adj_df):
 
     return modularity, eff_global, seg_global, partition
 
-
+#within metrics
 def compute_network_specific_metrics(adj_df, partition):
     """Compute within-network metrics given atlas labels."""
     labels = adj_df.columns.tolist()
 
-    # identify network names (e.g., '7Networks_LH_Vis')
+    # identify network names 
     networks = [l.split('_')[2] if len(l.split('_')) > 2 else l for l in labels]
     unique_networks = sorted(set(networks))
 
@@ -72,7 +72,7 @@ def compute_network_specific_metrics(adj_df, partition):
     return net_results
 
 
-# ==== MAIN LOOP ====
+# adjacency and metrics
 
 metrics_list = []
 
